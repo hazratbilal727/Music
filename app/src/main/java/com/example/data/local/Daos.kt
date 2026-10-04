@@ -70,6 +70,9 @@ interface SongDao {
     @Query("UPDATE songs SET title = :title, artist = :artist, album = :album, genre = :genre, year = :year, lyrics = :lyrics WHERE id = :songId")
     suspend fun updateSongMetadata(songId: Long, title: String, artist: String, album: String, genre: String, year: Int, lyrics: String?)
 
+    @Query("UPDATE songs SET albumArtUriString = :artworkUri WHERE id = :songId")
+    suspend fun updateSongArtwork(songId: Long, artworkUri: String?)
+
     @Query("DELETE FROM songs WHERE id = :songId")
     suspend fun deleteSong(songId: Long)
 }

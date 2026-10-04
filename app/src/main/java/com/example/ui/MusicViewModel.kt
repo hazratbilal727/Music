@@ -14,7 +14,6 @@ import com.example.data.model.Playlist
 import com.example.data.model.Song
 import com.example.data.model.SortOrder
 import com.example.playback.PlaybackState
-import com.example.ui.theme.AccentChoice
 import com.example.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -126,8 +125,26 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _themeMode = MutableStateFlow(ThemeMode.DARK)
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
-    private val _accentChoice = MutableStateFlow(AccentChoice.AMBER)
-    val accentChoice: StateFlow<AccentChoice> = _accentChoice.asStateFlow()
+    private val _pauseOnUnplug = MutableStateFlow(true)
+    val pauseOnUnplug: StateFlow<Boolean> = _pauseOnUnplug.asStateFlow()
+
+    private val _resumePlayback = MutableStateFlow(true)
+    val resumePlayback: StateFlow<Boolean> = _resumePlayback.asStateFlow()
+
+    private val _gaplessPlayback = MutableStateFlow(true)
+    val gaplessPlayback: StateFlow<Boolean> = _gaplessPlayback.asStateFlow()
+
+    private val _filterShortAudios = MutableStateFlow(true)
+    val filterShortAudios: StateFlow<Boolean> = _filterShortAudios.asStateFlow()
+
+    private val _crossfadeSeconds = MutableStateFlow(0)
+    val crossfadeSeconds: StateFlow<Int> = _crossfadeSeconds.asStateFlow()
+
+    private val _isScanning = MutableStateFlow(false)
+    val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
+
+    private val _lastScanTime = MutableStateFlow("Just now")
+    val lastScanTime: StateFlow<String> = _lastScanTime.asStateFlow()
 
     private val _sortOrder = MutableStateFlow(SortOrder.TITLE_ASC)
     val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
@@ -277,8 +294,28 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _themeMode.value = mode
     }
 
-    fun setAccentChoice(accent: AccentChoice) {
-        _accentChoice.value = accent
+    fun toggleThemeMode() {
+        _themeMode.value = if (_themeMode.value == ThemeMode.DARK) ThemeMode.LIGHT else ThemeMode.DARK
+    }
+
+    fun setPauseOnUnplug(enabled: Boolean) {
+        _pauseOnUnplug.value = enabled
+    }
+
+    fun setResumePlayback(enabled: Boolean) {
+        _resumePlayback.value = enabled
+    }
+
+    fun setGaplessPlayback(enabled: Boolean) {
+        _gaplessPlayback.value = enabled
+    }
+
+    fun setFilterShortAudios(enabled: Boolean) {
+        _filterShortAudios.value = enabled
+    }
+
+    fun setCrossfadeSeconds(seconds: Int) {
+        _crossfadeSeconds.value = seconds
     }
 
     fun setSleepTimerMinutes(minutes: Int) {
@@ -349,10 +386,32 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateSongArtwork(songId: Long, artworkUri: String?) {
+        viewModelScope.launch {
+            repository.updateSongArtwork(songId, artworkUri)
+            playbackManager.updateCurrentSongArtwork(artworkUri)
+        }
+    }
+
     // Media & Library
     fun rescanLibrary() {
         viewModelScope.launch {
-            repository.scanMediaStore()
+            _isScanning.value = true
+            try {
+                repository.scanMediaStore()
+                val now = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+                _lastScanTime.value = "Today at $now"
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isScanning.value = false
+            }
+        }
+    }
+
+    fun clearAppCache() {
+        viewModelScope.launch {
+            repository.clearSearchHistory()
         }
     }
 

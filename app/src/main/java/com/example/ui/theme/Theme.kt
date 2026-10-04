@@ -11,10 +11,6 @@ enum class ThemeMode {
     LIGHT
 }
 
-enum class AccentChoice(val label: String, val color: Color) {
-    RED("Red", VibrantRed)
-}
-
 // Dark Scheme: Pure Black Background, Dark Charcoal Surface, White Text, Vibrant Red Accent
 fun createDarkColorScheme() = darkColorScheme(
     primary = VibrantRed,
@@ -58,7 +54,6 @@ fun createLightColorScheme() = lightColorScheme(
 @Composable
 fun MusicPlayerTheme(
     themeMode: ThemeMode = ThemeMode.DARK,
-    accentChoice: AccentChoice = AccentChoice.RED,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -76,3 +71,4 @@ fun MusicPlayerTheme(
         content = content
     )
 }
+

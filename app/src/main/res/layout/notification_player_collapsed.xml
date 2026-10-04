@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/notif_collapsed_container"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:background="@drawable/bg_notif_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp">
+
+    <ImageView
+        android:id="@+id/notif_collapsed_art"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="Album Art"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_launcher_logo" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="6dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/notif_collapsed_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Track Title"
+            android:textColor="#121316"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/notif_collapsed_artist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Artist Name"
+            android:textColor="#6B6E77"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/notif_collapsed_fav"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Favorite"
+        android:padding="6dp"
+        android:src="@drawable/ic_notif_heart_outline" />
+
+    <ImageView
+        android:id="@+id/notif_collapsed_prev"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="2dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Previous"
+        android:padding="5dp"
+        android:src="@drawable/ic_notif_prev" />
+
+    <ImageView
+        android:id="@+id/notif_collapsed_play_pause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="2dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Play/Pause"
+        android:padding="4dp"
+        android:src="@drawable/ic_notif_play" />
+
+    <ImageView
+        android:id="@+id/notif_collapsed_next"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="2dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Next"
+        android:padding="5dp"
+        android:src="@drawable/ic_notif_next" />
+
+    <ImageView
+        android:id="@+id/notif_collapsed_close"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="2dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Close"
+        android:padding="7dp"
+        android:src="@drawable/ic_notif_close" />
+
+</LinearLayout>

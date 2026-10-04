@@ -414,6 +414,10 @@ class MusicRepository(
         songDao.updateSongMetadata(songId, title, artist, album, genre, year, lyrics)
     }
 
+    suspend fun updateSongArtwork(songId: Long, artworkUri: String?) = withContext(Dispatchers.IO) {
+        songDao.updateSongArtwork(songId, artworkUri)
+    }
+
     suspend fun deleteSong(songId: Long) = withContext(Dispatchers.IO) {
         songDao.deleteSong(songId)
     }

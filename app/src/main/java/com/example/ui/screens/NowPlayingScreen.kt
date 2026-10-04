@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -49,12 +52,21 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,12 +74,16 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -82,6 +98,9 @@ import com.example.data.model.RepeatMode
 import com.example.data.model.Song
 import com.example.playback.PlaybackState
 import com.example.ui.components.ArtworkImage
+import com.example.ui.components.MusicWavesVisualizer
+import com.example.ui.components.WaveVisualizerMode
+import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -106,13 +125,37 @@ fun NowPlayingScreen(
     onShowSongDetails: ((Song) -> Unit)? = null,
     onAddToPlaylist: ((Song) -> Unit)? = null,
     onOpenThemePicker: (() -> Unit)? = null,
+    onArtworkChangeUri: ((Long, String?) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val song = state.currentSong ?: return
+    val haptic = LocalHapticFeedback.current
 
     var isUserScrubbing by remember { mutableStateOf(false) }
     var scrubProgress by remember { mutableFloatStateOf(0f) }
     var showLyrics by remember { mutableStateOf(false) }
+    var visualizerMode by remember { mutableStateOf(WaveVisualizerMode.MAGENTA_SUNSET) }
+    var preferVisualizer by remember { mutableStateOf(true) }
+    var showArtworkOptionsDialog by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onArtworkChangeUri?.invoke(song.id, uri.toString())
+        }
+    }
+
+    val onArtworkTap: () -> Unit = {
+        try {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        } catch (e: Exception) {
+            // Ignore
+        }
+        val allModes = WaveVisualizerMode.entries
+        val nextIndex = (visualizerMode.ordinal + 1) % allModes.size
+        visualizerMode = allModes[nextIndex]
+    }
 
     val currentMs = if (isUserScrubbing) {
         (scrubProgress * state.durationMs).toLong()
@@ -125,6 +168,26 @@ fun NowPlayingScreen(
 
     val currentProgress = if (isUserScrubbing) scrubProgress else state.progress.coerceIn(0f, 1f)
     val lyricsList = remember(song.lyrics) { song.parsedLyrics }
+
+    // Music sync beat pulse (simulated 110 BPM rhythm groove)
+    val beatInterval = (545L / state.playbackSpeed.coerceIn(0.5f, 2.0f)).toLong()
+    val beatProgress = ((currentMs % beatInterval).toFloat() / beatInterval)
+    val beatPulse = if (state.isPlaying) {
+        val raw = sin(beatProgress * PI).toFloat()
+        (raw * raw).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    // Dominant wave accent color for interactive aura matching the active wave style
+    val dominantWaveColor = when (visualizerMode) {
+        WaveVisualizerMode.MAGENTA_SUNSET -> Color(0xFFEC4899) // Sunset Pink / Magenta (matching screenshot!)
+        WaveVisualizerMode.FLUID_OCEAN -> Color(0xFF00E676)   // Emerald Green
+        WaveVisualizerMode.CYBER_RIBBONS -> Color(0xFF00E5FF) // Neon Cyan
+        WaveVisualizerMode.RADIAL_PULSES -> Color(0xFF9D4EDD) // Electric Purple
+        WaveVisualizerMode.WAVE_SPECTRUM -> Color(0xFFFFD600) // Golden Amber
+        WaveVisualizerMode.CRIMSON_PULSE -> Color(0xFFE50914) // Crimson Red
+    }
 
     // Pure black styling as required
     val backgroundColor = Color(0xFF000000) // Deep pure black
@@ -313,6 +376,24 @@ fun NowPlayingScreen(
                         modifier = Modifier.size(286.dp),
                         contentAlignment = Alignment.Center
                     ) {
+                        // Subtle pulsating ambient wave glow behind disc
+                        Canvas(modifier = Modifier.size(286.dp)) {
+                            val center = Offset(size.width / 2f, size.height / 2f)
+                            val glowRadius = (size.minDimension / 2f) * (0.94f + 0.12f * beatPulse)
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        dominantWaveColor.copy(alpha = if (state.isPlaying) 0.32f + 0.18f * beatPulse else 0.08f),
+                                        Color.Transparent
+                                    ),
+                                    center = center,
+                                    radius = glowRadius
+                                ),
+                                center = center,
+                                radius = glowRadius
+                            )
+                        }
+
                         // Canvas for circular track and progress scrubber
                         Canvas(
                             modifier = Modifier
@@ -390,21 +471,56 @@ fun NowPlayingScreen(
                             )
                         }
 
-                        // Inner circular album artwork
+                        // Inner circular album artwork / Animated Waves Visualizer
                         Box(
                             modifier = Modifier
                                 .size(240.dp)
                                 .clip(CircleShape)
-                                .border(2.dp, Color(0xFF222328), CircleShape)
-                                .clickable { showLyrics = true }
+                                .border(2.5.dp, dominantWaveColor.copy(alpha = 0.65f), CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(bounded = true, color = dominantWaveColor)
+                                ) {
+                                    onArtworkTap()
+                                }
+                                .testTag("now_playing_artwork"),
+                            contentAlignment = Alignment.Center
                         ) {
-                            ArtworkImage(
-                                artworkUri = song.albumArtUriString,
-                                title = song.title,
-                                size = 240.dp,
-                                shape = CircleShape,
+                            MusicWavesVisualizer(
+                                isPlaying = state.isPlaying,
+                                currentPositionMs = currentMs,
+                                playbackSpeed = state.playbackSpeed,
+                                diameter = 240.dp,
+                                mode = visualizerMode,
+                                onTap = onArtworkTap,
                                 modifier = Modifier.fillMaxSize()
                             )
+
+                            // Clear, prominent animated feedback HUD overlay right in the center!
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = showArtworkToast,
+                                enter = scaleIn(initialScale = 0.82f, animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeIn(tween(160)),
+                                exit = scaleOut(targetScale = 0.88f, animationSpec = tween(200)) + fadeOut(tween(200)),
+                                modifier = Modifier.align(Alignment.Center)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color(0xFF0C0D12).copy(alpha = 0.92f),
+                                    border = androidx.compose.foundation.BorderStroke(1.5.dp, dominantWaveColor.copy(alpha = 0.85f)),
+                                    shadowElevation = 10.dp
+                                ) {
+                                    Text(
+                                        text = "✦ $artworkToastText",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            letterSpacing = 0.6.sp
+                                        ),
+                                        color = dominantWaveColor,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 } else {
@@ -727,5 +843,44 @@ fun NowPlayingScreen(
                 }
             }
         }
+    }
+
+    // Long press on circular artwork options dialog
+    if (showArtworkOptionsDialog) {
+        AlertDialog(
+            onDismissRequest = { showArtworkOptionsDialog = false },
+            title = {
+                Text(
+                    text = "Album Artwork Options",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "• Tap the artwork directly during playback to switch between wave visualizers and album cover.\n\n• Long-press allows selecting a custom image for this song.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showArtworkOptionsDialog = false
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                ) {
+                    Text("Pick Custom Photo", color = accentRedColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showArtworkOptionsDialog = false }) {
+                    Text("Close", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        )
     }
 }

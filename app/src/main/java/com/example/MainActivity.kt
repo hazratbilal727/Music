@@ -62,12 +62,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: MusicViewModel = viewModel()
             val themeMode by viewModel.themeMode.collectAsState()
-            val accentChoice by viewModel.accentChoice.collectAsState()
             var showSplash by remember { mutableStateOf(true) }
 
             MusicPlayerTheme(
-                themeMode = themeMode,
-                accentChoice = accentChoice
+                themeMode = themeMode
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     MainAppContent(viewModel = viewModel)
@@ -119,7 +117,13 @@ fun MainAppContent(viewModel: MusicViewModel) {
     val songForDetails by viewModel.songForDetails.collectAsState()
 
     val themeMode by viewModel.themeMode.collectAsState()
-    val accentChoice by viewModel.accentChoice.collectAsState()
+    val pauseOnUnplug by viewModel.pauseOnUnplug.collectAsState()
+    val resumePosition by viewModel.resumePlayback.collectAsState()
+    val gaplessPlayback by viewModel.gaplessPlayback.collectAsState()
+    val filterShortAudios by viewModel.filterShortAudios.collectAsState()
+    val crossfadeSeconds by viewModel.crossfadeSeconds.collectAsState()
+    val isScanning by viewModel.isScanning.collectAsState()
+    val lastScanTime by viewModel.lastScanTime.collectAsState()
 
     // Permissions check
     val permissionsToRequest = remember {
@@ -275,12 +279,23 @@ fun MainAppContent(viewModel: MusicViewModel) {
                 SettingsScreen(
                     currentThemeMode = themeMode,
                     onThemeModeChange = { viewModel.setThemeMode(it) },
-                    currentAccent = accentChoice,
-                    onAccentChange = { viewModel.setAccentChoice(it) },
                     onOpenEqualizer = { viewModel.setEqualizerVisible(true) },
                     onOpenSleepTimer = { viewModel.setSleepTimerVisible(true) },
                     onRescanLibrary = { viewModel.rescanLibrary() },
                     onBack = { viewModel.navigateBack() },
+                    pauseOnUnplug = pauseOnUnplug,
+                    onPauseOnUnplugChange = { viewModel.setPauseOnUnplug(it) },
+                    resumePosition = resumePosition,
+                    onResumePositionChange = { viewModel.setResumePlayback(it) },
+                    gaplessPlayback = gaplessPlayback,
+                    onGaplessPlaybackChange = { viewModel.setGaplessPlayback(it) },
+                    filterShortAudios = filterShortAudios,
+                    onFilterShortAudiosChange = { viewModel.setFilterShortAudios(it) },
+                    crossfadeSeconds = crossfadeSeconds,
+                    onCrossfadeSecondsChange = { viewModel.setCrossfadeSeconds(it) },
+                    isScanning = isScanning,
+                    lastScanTime = lastScanTime,
+                    onClearCache = { viewModel.clearAppCache() },
                     songsCount = allSongs.size,
                     albumsCount = albums.size,
                     artistsCount = artists.size,
@@ -448,7 +463,7 @@ fun MainAppContent(viewModel: MusicViewModel) {
                 onRewind = { viewModel.rewind() },
                 onShowSongDetails = { viewModel.setSongForDetails(it) },
                 onAddToPlaylist = { viewModel.setSongToAddToPlaylist(it) },
-                onOpenThemePicker = { viewModel.cyclePlaybackSpeed() }
+                onArtworkChangeUri = { songId, uri -> viewModel.updateSongArtwork(songId, uri) }
             )
         }
 

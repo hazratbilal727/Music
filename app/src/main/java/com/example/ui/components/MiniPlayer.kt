@@ -88,21 +88,13 @@ fun MiniPlayer(
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Square Music Note badge / Artwork
-                        Box(
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF252732)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MusicNote,
-                                contentDescription = null,
-                                tint = Color(0xFFB0B4C3),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                        // Animated Artwork / Waves badge
+                        ArtworkImage(
+                            artworkUri = song.albumArtUriString,
+                            title = song.title,
+                            size = 46.dp,
+                            shape = RoundedCornerShape(10.dp)
+                        )
 
                         Spacer(modifier = Modifier.width(14.dp))
 

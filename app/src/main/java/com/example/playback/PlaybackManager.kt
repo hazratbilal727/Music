@@ -537,6 +537,21 @@ class PlaybackManager private constructor(
         startService()
     }
 
+    fun updateCurrentSongArtwork(artworkUri: String?) {
+        val current = _state.value.currentSong ?: return
+        val updated = current.copy(albumArtUriString = artworkUri)
+        _state.value = _state.value.copy(currentSong = updated)
+    }
+
+    fun toggleFavoriteCurrent() {
+        val current = _state.value.currentSong ?: return
+        scope.launch {
+            repository.toggleFavorite(current)
+            val updated = current.copy(isFavorite = !current.isFavorite)
+            _state.value = _state.value.copy(currentSong = updated)
+        }
+    }
+
     fun stopPlayback() {
         pause()
         stopProgressTracker()
