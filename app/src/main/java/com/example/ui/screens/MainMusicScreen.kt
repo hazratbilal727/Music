@@ -105,19 +105,19 @@ fun MainMusicScreen(
     onPlayPause: () -> Unit,
     onNextTrack: () -> Unit,
     onOpenNowPlaying: () -> Unit,
+    onLoadSamplePack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F0F14))
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top App Bar matching screenshot
             TopBrandHeader(
                 onSearchClick = onNavigateToSearch,
-                onVideoClick = onNavigateToSearch,
                 onSettingsClick = onNavigateToSettings
             )
 
@@ -152,9 +152,11 @@ fun MainMusicScreen(
                             EmptyMediaView(
                                 icon = Icons.Default.MusicNote,
                                 title = "No Music Found",
-                                subtitle = "No audio files detected on your device. Add music (.mp3, .m4a, .flac, .wav) to storage, then rescan.",
-                                actionText = "Rescan Library",
-                                onAction = onRescanFolders
+                                subtitle = "No audio files detected on your device. Load demo tracks to explore music player immediately, or scan device storage.",
+                                actionText = "Load Demo Music",
+                                onAction = onLoadSamplePack,
+                                secondaryActionText = "Rescan",
+                                onSecondaryAction = onRescanFolders
                             )
                         } else {
                             LazyColumn(
@@ -289,7 +291,6 @@ fun MainMusicScreen(
 @Composable
 private fun TopBrandHeader(
     onSearchClick: () -> Unit,
-    onVideoClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     Row(
@@ -299,7 +300,7 @@ private fun TopBrandHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Brand Title with PRO badge
+        // Brand Title with PRO badge (preserved as requested)
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -310,7 +311,7 @@ private fun TopBrandHeader(
                     fontSize = 22.sp,
                     letterSpacing = 0.5.sp
                 ),
-                color = Color.White
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.width(6.dp))
@@ -334,7 +335,7 @@ private fun TopBrandHeader(
             }
         }
 
-        // Top Right Icons: Search, Video, Hexagon Settings
+        // Top Right Icons: Search and Hexagon Settings
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -346,19 +347,7 @@ private fun TopBrandHeader(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
-                    tint = Color(0xFFD6D8E2),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            IconButton(
-                onClick = onVideoClick,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.SmartDisplay,
-                    contentDescription = "Video",
-                    tint = Color(0xFFD6D8E2),
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -370,7 +359,7 @@ private fun TopBrandHeader(
                 Icon(
                     imageVector = Icons.Default.Hexagon,
                     contentDescription = "Settings",
-                    tint = Color(0xFFD6D8E2),
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -405,7 +394,7 @@ private fun PillNavigationTabs(
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(
-                        if (isSelected) Color.White else Color(0xFF1E2028)
+                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                     )
                     .clickable { onTabSelected(tab) }
                     .padding(horizontal = 18.dp, vertical = 9.dp)
@@ -418,7 +407,7 @@ private fun PillNavigationTabs(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         fontSize = 14.sp
                     ),
-                    color = if (isSelected) Color.Black else Color(0xFFA5A8B6)
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

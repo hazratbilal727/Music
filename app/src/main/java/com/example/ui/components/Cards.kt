@@ -250,6 +250,8 @@ fun EmptyMediaView(
     subtitle: String,
     actionText: String? = null,
     onAction: (() -> Unit)? = null,
+    secondaryActionText: String? = null,
+    onSecondaryAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -290,11 +292,21 @@ fun EmptyMediaView(
         )
         if (actionText != null && onAction != null) {
             Spacer(modifier = Modifier.height(20.dp))
-            androidx.compose.material3.Button(
-                onClick = onAction,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(text = actionText)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                androidx.compose.material3.Button(
+                    onClick = onAction,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(text = actionText)
+                }
+                if (secondaryActionText != null && onSecondaryAction != null) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onSecondaryAction,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(text = secondaryActionText)
+                    }
+                }
             }
         }
     }

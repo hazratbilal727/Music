@@ -161,6 +161,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     // Playback Controls
     fun playSong(song: Song, queue: List<Song> = listOf(song), index: Int = queue.indexOf(song).coerceAtLeast(0)) {
         playbackManager.playSong(song, queue, index)
+        _showNowPlaying.value = true
+    }
+
+    fun loadSamplePack() {
+        viewModelScope.launch {
+            repository.seedSampleSongs()
+        }
     }
 
     fun togglePlayPause() = playbackManager.togglePlayPause()

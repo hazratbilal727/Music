@@ -1,42 +1,32 @@
 package com.example.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
 enum class ThemeMode {
-    SYSTEM,
     DARK,
-    AMOLED,
     LIGHT
 }
 
 enum class AccentChoice(val label: String, val color: Color) {
-    VIOLET("Electric Violet", ElectricViolet),
-    CYAN("Neon Cyan", ElectricCyan),
-    CORAL("Coral Glow", NeonCoral),
-    EMERALD("Emerald Wave", EmeraldWave),
-    AMBER("Sunset Gold", SunsetAmber)
+    RED("Red", VibrantRed)
 }
 
-fun createDarkColorScheme(accent: Color = ElectricViolet) = darkColorScheme(
-    primary = accent,
+// Dark Scheme: Pure Black Background, Dark Charcoal Surface, White Text, Vibrant Red Accent
+fun createDarkColorScheme() = darkColorScheme(
+    primary = VibrantRed,
     onPrimary = Color.White,
-    primaryContainer = accent.copy(alpha = 0.25f),
+    primaryContainer = VibrantRed.copy(alpha = 0.25f),
     onPrimaryContainer = Color.White,
-    secondary = ElectricCyan,
-    onSecondary = Color.Black,
-    secondaryContainer = ElectricCyan.copy(alpha = 0.2f),
+    secondary = VibrantRed,
+    onSecondary = Color.White,
+    secondaryContainer = DarkSurfaceVariant,
     onSecondaryContainer = Color.White,
-    background = DarkBackground,
-    onBackground = TextPrimaryDark,
+    background = DarkBackground, // Pure Black (#000000)
+    onBackground = TextPrimaryDark, // White (#FFFFFF)
     surface = DarkSurface,
     onSurface = TextPrimaryDark,
     surfaceVariant = DarkSurfaceVariant,
@@ -45,36 +35,18 @@ fun createDarkColorScheme(accent: Color = ElectricViolet) = darkColorScheme(
     outline = DarkCardBorder
 )
 
-fun createAmoledColorScheme(accent: Color = ElectricViolet) = darkColorScheme(
-    primary = accent,
+// Light Scheme: Pure White Background, Clean Light Surface, Solid Black Text, Vibrant Red Accent
+fun createLightColorScheme() = lightColorScheme(
+    primary = VibrantRed,
     onPrimary = Color.White,
-    primaryContainer = accent.copy(alpha = 0.25f),
-    onPrimaryContainer = Color.White,
-    secondary = ElectricCyan,
-    onSecondary = Color.Black,
-    secondaryContainer = ElectricCyan.copy(alpha = 0.2f),
-    onSecondaryContainer = Color.White,
-    background = AmoledBackground,
-    onBackground = TextPrimaryDark,
-    surface = AmoledSurface,
-    onSurface = TextPrimaryDark,
-    surfaceVariant = AmoledSurfaceVariant,
-    onSurfaceVariant = TextSecondaryDark,
-    surfaceContainer = AmoledSurfaceContainer,
-    outline = AmoledCardBorder
-)
-
-fun createLightColorScheme(accent: Color = ElectricVioletVariant) = lightColorScheme(
-    primary = accent,
-    onPrimary = Color.White,
-    primaryContainer = accent.copy(alpha = 0.15f),
-    onPrimaryContainer = accent,
-    secondary = ElectricCyan,
+    primaryContainer = VibrantRed.copy(alpha = 0.15f),
+    onPrimaryContainer = DarkVibrantRed,
+    secondary = VibrantRed,
     onSecondary = Color.White,
-    secondaryContainer = ElectricCyan.copy(alpha = 0.15f),
-    onSecondaryContainer = ElectricCyan,
-    background = LightBackground,
-    onBackground = TextPrimaryLight,
+    secondaryContainer = LightSurfaceVariant,
+    onSecondaryContainer = Color.Black,
+    background = LightBackground, // Pure White (#FFFFFF)
+    onBackground = TextPrimaryLight, // Black (#000000)
     surface = LightSurface,
     onSurface = TextPrimaryLight,
     surfaceVariant = LightSurfaceVariant,
@@ -85,26 +57,17 @@ fun createLightColorScheme(accent: Color = ElectricVioletVariant) = lightColorSc
 
 @Composable
 fun MusicPlayerTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
-    accentChoice: AccentChoice = AccentChoice.VIOLET,
+    themeMode: ThemeMode = ThemeMode.DARK,
+    accentChoice: AccentChoice = AccentChoice.RED,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val isSystemDark = isSystemInDarkTheme()
-    val isDark = when (themeMode) {
-        ThemeMode.SYSTEM -> isSystemDark
-        ThemeMode.DARK, ThemeMode.AMOLED -> true
-        ThemeMode.LIGHT -> false
-    }
+    val isDark = themeMode != ThemeMode.LIGHT
 
-    val context = LocalContext.current
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        themeMode == ThemeMode.AMOLED -> createAmoledColorScheme(accentChoice.color)
-        isDark -> createDarkColorScheme(accentChoice.color)
-        else -> createLightColorScheme(accentChoice.color)
+    val colorScheme = if (isDark) {
+        createDarkColorScheme()
+    } else {
+        createLightColorScheme()
     }
 
     MaterialTheme(

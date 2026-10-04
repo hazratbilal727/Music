@@ -11,7 +11,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,10 +30,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.ChatBubbleOutline
-import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Pause
@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.FilledIconButton
@@ -55,6 +56,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -66,7 +68,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -113,7 +114,11 @@ fun NowPlayingScreen(
     var scrubProgress by remember { mutableFloatStateOf(0f) }
     var showLyrics by remember { mutableStateOf(false) }
 
-    val currentMs = if (isUserScrubbing) (scrubProgress * state.durationMs).toLong() else state.currentPositionMs
+    val currentMs = if (isUserScrubbing) {
+        (scrubProgress * state.durationMs).toLong()
+    } else {
+        state.currentPositionMs
+    }
     val formattedCurrent = "%02d:%02d".format((currentMs / 1000) / 60, (currentMs / 1000) % 60)
     val totalMs = state.durationMs.coerceAtLeast(0L)
     val formattedTotal = "%02d:%02d".format((totalMs / 1000) / 60, (totalMs / 1000) % 60)
@@ -121,23 +126,19 @@ fun NowPlayingScreen(
     val currentProgress = if (isUserScrubbing) scrubProgress else state.progress.coerceIn(0f, 1f)
     val lyricsList = remember(song.lyrics) { song.parsedLyrics }
 
-    // Dark sleek background matching user screenshot
-    val backgroundColorTop = Color(0xFF45464A)
-    val backgroundColorBottom = Color(0xFF323336)
-    val iconMutedColor = Color(0xFFB4B6C0)
+    // Pure black styling as required
+    val backgroundColor = Color(0xFF000000) // Deep pure black
+    val iconMutedColor = Color(0xFF90939F)
     val accentRedColor = Color(0xFFE53935)
+    val circleTrackColor = Color(0xFF1E1F24)
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(backgroundColorTop, backgroundColorBottom)
-                )
-            )
+            .background(backgroundColor)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .padding(horizontal = 18.dp, vertical = 6.dp)
             .testTag("now_playing_screen")
     ) {
         Column(
@@ -145,29 +146,83 @@ fun NowPlayingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1. Top Drag Handle
-            Box(
+            // 1. Top Bar: Collapse Button, Centered Header & Pill, Info Button
+            Row(
                 modifier = Modifier
-                    .padding(top = 2.dp, bottom = 12.dp)
-                    .width(42.dp)
-                    .height(4.5.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF75767B))
-                    .clickable { onBack() }
-            )
+                    .fillMaxWidth()
+                    .padding(top = 2.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Down Chevron to Collapse Player
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_collapse")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Collapse Player",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // Centered Drag Pill + Header Label
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { onBack() }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF45474F))
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "NOW PLAYING",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.6.sp,
+                            fontSize = 11.sp
+                        ),
+                        color = Color(0xFF9597A2)
+                    )
+                }
+
+                // Song Info / Details Button
+                IconButton(
+                    onClick = { onShowSongDetails?.invoke(song) },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_details")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Song Info",
+                        tint = iconMutedColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
 
             // 2. Header Row: Shuffle, Title/Artist, Repeat
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp),
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Shuffle Button
                 IconButton(
                     onClick = onToggleShuffle,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier
+                        .size(42.dp)
+                        .testTag("now_playing_shuffle")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Shuffle,
@@ -181,7 +236,7 @@ fun NowPlayingScreen(
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -198,12 +253,12 @@ fun NowPlayingScreen(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = song.artist,
+                        text = "${song.artist} • ${song.album}",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 14.sp,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Normal
                         ),
-                        color = Color(0xFFB0B2BA),
+                        color = Color(0xFFA5A7B2),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center
@@ -213,7 +268,9 @@ fun NowPlayingScreen(
                 // Repeat Button
                 IconButton(
                     onClick = onToggleRepeat,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier
+                        .size(42.dp)
+                        .testTag("now_playing_repeat")
                 ) {
                     val (icon, tint) = when (state.repeatMode) {
                         RepeatMode.OFF -> Pair(Icons.Default.Repeat, iconMutedColor)
@@ -229,22 +286,22 @@ fun NowPlayingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 3. Time Display directly above circle: "00:00 / 03:30"
+            // Time Display: "00:00 / 03:30"
             Text(
                 text = "$formattedCurrent / $formattedTotal",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     letterSpacing = 0.5.sp
                 ),
                 color = Color(0xFFC0C2CB)
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // 4. Center Area: Circular Player with Circular Progress Arc OR Lyrics
+            // Center Area: Circular Player with Circular Progress Arc OR Synchronized Lyrics
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -253,30 +310,29 @@ fun NowPlayingScreen(
             ) {
                 if (!showLyrics) {
                     Box(
-                        modifier = Modifier
-                            .size(290.dp),
+                        modifier = Modifier.size(286.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         // Canvas for circular track and progress scrubber
                         Canvas(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .pointerInput(Unit) {
+                                .pointerInput(totalMs) {
                                     detectTapGestures { offset ->
                                         val center = Offset(size.width / 2f, size.height / 2f)
                                         val touchVector = offset - center
                                         val angle = Math.toDegrees(atan2(touchVector.y.toDouble(), touchVector.x.toDouble())).toFloat()
                                         val normalizedAngle = (angle + 90f + 360f) % 360f
                                         val newProgress = (normalizedAngle / 360f).coerceIn(0f, 1f)
-                                        val targetMs = (newProgress * state.durationMs).toLong()
+                                        val targetMs = (newProgress * totalMs).toLong()
                                         onSeek(targetMs)
                                     }
                                 }
-                                .pointerInput(Unit) {
+                                .pointerInput(totalMs) {
                                     detectDragGestures(
                                         onDragStart = { isUserScrubbing = true },
                                         onDragEnd = {
-                                            val targetMs = (scrubProgress * state.durationMs).toLong()
+                                            val targetMs = (scrubProgress * totalMs).toLong()
                                             onSeek(targetMs)
                                             isUserScrubbing = false
                                         },
@@ -297,7 +353,7 @@ fun NowPlayingScreen(
 
                             // Background circular track
                             drawCircle(
-                                color = Color(0xFF56575C),
+                                color = circleTrackColor,
                                 radius = radius,
                                 center = center,
                                 style = Stroke(width = strokeWidth)
@@ -306,7 +362,7 @@ fun NowPlayingScreen(
                             // Active progress arc
                             val sweepAngle = currentProgress * 360f
                             drawArc(
-                                color = Color.White.copy(alpha = 0.95f),
+                                color = accentRedColor,
                                 startAngle = -90f,
                                 sweepAngle = sweepAngle,
                                 useCenter = false,
@@ -322,14 +378,14 @@ fun NowPlayingScreen(
 
                             // Outer subtle shadow for thumb
                             drawCircle(
-                                color = Color.Black.copy(alpha = 0.25f),
+                                color = Color.Black.copy(alpha = 0.5f),
                                 radius = 10.dp.toPx(),
                                 center = Offset(thumbX, thumbY)
                             )
                             // Solid white thumb dot
                             drawCircle(
                                 color = Color.White,
-                                radius = 8.5.dp.toPx(),
+                                radius = 8.dp.toPx(),
                                 center = Offset(thumbX, thumbY)
                             )
                         }
@@ -337,15 +393,15 @@ fun NowPlayingScreen(
                         // Inner circular album artwork
                         Box(
                             modifier = Modifier
-                                .size(248.dp)
+                                .size(240.dp)
                                 .clip(CircleShape)
-                                .border(2.dp, Color(0xFF4C4D52), CircleShape)
+                                .border(2.dp, Color(0xFF222328), CircleShape)
                                 .clickable { showLyrics = true }
                         ) {
                             ArtworkImage(
                                 artworkUri = song.albumArtUriString,
                                 title = song.title,
-                                size = 248.dp,
+                                size = 240.dp,
                                 shape = CircleShape,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -354,13 +410,22 @@ fun NowPlayingScreen(
                 } else {
                     // Synchronized / Formatted Lyrics Box
                     val lyricsState = rememberLazyListState()
+
+                    // Auto-scroll to current lyric line
+                    LaunchedEffect(currentMs) {
+                        val activeIndex = lyricsList.indexOfLast { currentMs >= it.timestampMs }
+                        if (activeIndex >= 0) {
+                            lyricsState.animateScrollToItem((activeIndex - 1).coerceAtLeast(0))
+                        }
+                    }
+
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(0.92f)
-                            .height(290.dp)
+                            .fillMaxWidth(0.94f)
+                            .height(286.dp)
                             .clip(RoundedCornerShape(22.dp))
-                            .background(Color(0xFF2E2F33).copy(alpha = 0.75f))
-                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(22.dp))
+                            .background(Color(0xFF111215))
+                            .border(1.dp, Color(0xFF262730), RoundedCornerShape(22.dp))
                             .clickable { showLyrics = false }
                             .padding(18.dp),
                         contentAlignment = Alignment.Center
@@ -400,11 +465,11 @@ fun NowPlayingScreen(
                                             fontWeight = if (isPassed) FontWeight.Bold else FontWeight.Normal,
                                             fontSize = if (isPassed) 17.sp else 14.sp
                                         ),
-                                        color = if (isPassed) accentRedColor else Color.White.copy(alpha = 0.6f),
+                                        color = if (isPassed) accentRedColor else Color.White.copy(alpha = 0.5f),
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 6.dp)
+                                            .padding(vertical = 5.dp)
                                     )
                                 }
                             }
@@ -413,20 +478,22 @@ fun NowPlayingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 5. Utility Bar (5 icons matching screenshot)
+            // Utility Bar (5 icons: Playlist, Equalizer, Timer, Speed, More)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 1. Add to Playlist
                 IconButton(
                     onClick = { onAddToPlaylist?.invoke(song) },
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_add_to_playlist")
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlaylistAdd,
@@ -439,7 +506,9 @@ fun NowPlayingScreen(
                 // 2. Equalizer
                 IconButton(
                     onClick = onOpenEqualizer,
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_equalizer")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Tune,
@@ -452,7 +521,9 @@ fun NowPlayingScreen(
                 // 3. Sleep Timer
                 IconButton(
                     onClick = onOpenSleepTimer,
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_sleep_timer")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Timer,
@@ -462,23 +533,31 @@ fun NowPlayingScreen(
                     )
                 }
 
-                // 4. Theme / Skin
+                // 4. Playback Speed Selector (e.g. 1.0x, 1.25x)
                 IconButton(
-                    onClick = { onOpenThemePicker?.invoke() ?: onCycleSpeed() },
-                    modifier = Modifier.size(44.dp)
+                    onClick = onCycleSpeed,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_speed")
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Checkroom,
-                        contentDescription = "Theme skin",
-                        tint = iconMutedColor,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${state.playbackSpeed}x",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            ),
+                            color = if (state.playbackSpeed != 1.0f) accentRedColor else iconMutedColor
+                        )
+                    }
                 }
 
                 // 5. More Options / Song Info
                 IconButton(
                     onClick = { onShowSongDetails?.invoke(song) },
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_more_options")
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreHoriz,
@@ -489,20 +568,22 @@ fun NowPlayingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 6. Main Playback Controls: Rewind 10s, Prev, Big Red Play/Pause, Next, Forward 10s
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
+                    .padding(horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Rewind 10s
                 IconButton(
                     onClick = { onRewind?.invoke() },
-                    modifier = Modifier.size(46.dp)
+                    modifier = Modifier
+                        .size(46.dp)
+                        .testTag("now_playing_rewind")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Replay10,
@@ -565,7 +646,9 @@ fun NowPlayingScreen(
                 // Forward 10s
                 IconButton(
                     onClick = { onFastForward?.invoke() },
-                    modifier = Modifier.size(46.dp)
+                    modifier = Modifier
+                        .size(46.dp)
+                        .testTag("now_playing_forward")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Forward10,
@@ -576,20 +659,22 @@ fun NowPlayingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 7. Bottom Row: Favorite, Lyrics toggle, Queue
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Favorite Heart
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_favorite")
                 ) {
                     Icon(
                         imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -604,7 +689,8 @@ fun NowPlayingScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { showLyrics = !showLyrics }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .testTag("now_playing_lyrics_toggle"),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -628,7 +714,9 @@ fun NowPlayingScreen(
                 // Queue Button
                 IconButton(
                     onClick = onOpenQueue,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("now_playing_queue")
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.QueueMusic,

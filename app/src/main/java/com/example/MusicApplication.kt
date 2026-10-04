@@ -34,7 +34,6 @@ class MusicApplication : Application() {
         // Initial scan of real device media
         applicationScope.launch {
             try {
-                repository.clearSampleSongs()
                 repository.scanMediaStore()
             } catch (e: Exception) {
                 e.printStackTrace()

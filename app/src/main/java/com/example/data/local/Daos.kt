@@ -43,6 +43,9 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE mediaStoreId = :mediaStoreId LIMIT 1")
     suspend fun getSongByMediaStoreId(mediaStoreId: Long): SongEntity?
 
+    @Query("SELECT COUNT(*) FROM songs")
+    suspend fun getSongCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertSongs(songs: List<SongEntity>): List<Long>
 

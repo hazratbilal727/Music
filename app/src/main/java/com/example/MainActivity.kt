@@ -212,7 +212,8 @@ fun MainAppContent(viewModel: MusicViewModel) {
                     onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
                     onPlayPause = { viewModel.togglePlayPause() },
                     onNextTrack = { viewModel.playNext() },
-                    onOpenNowPlaying = { viewModel.setNowPlayingVisible(true) }
+                    onOpenNowPlaying = { viewModel.setNowPlayingVisible(true) },
+                    onLoadSamplePack = { viewModel.loadSamplePack() }
                 )
             }
 

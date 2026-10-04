@@ -123,30 +123,28 @@ class PlaybackManager private constructor(
             player.prepare()
 
             applyPlaybackSpeed(_state.value.playbackSpeed)
+            requestAudioFocus()
+            player.start()
+            val duration = player.duration.toLong().coerceAtLeast(song.durationMs)
+            _state.value = _state.value.copy(
+                currentSong = song,
+                isPlaying = true,
+                isPrepared = true,
+                currentPositionMs = 0L,
+                durationMs = duration,
+                queue = queue,
+                queueIndex = startIndex,
+                audioSessionId = player.audioSessionId
+            )
+            equalizerController.attachToAudioSession(player.audioSessionId)
+            startProgressTracker()
 
-            if (requestAudioFocus()) {
-                player.start()
-                val duration = player.duration.toLong().coerceAtLeast(song.durationMs)
-                _state.value = _state.value.copy(
-                    currentSong = song,
-                    isPlaying = true,
-                    isPrepared = true,
-                    currentPositionMs = 0L,
-                    durationMs = duration,
-                    queue = queue,
-                    queueIndex = startIndex,
-                    audioSessionId = player.audioSessionId
-                )
-                equalizerController.attachToAudioSession(player.audioSessionId)
-                startProgressTracker()
-
-                // Record play in repository
-                scope.launch {
-                    repository.recordPlayback(song.id)
-                }
-
-                startService()
+            // Record play in repository
+            scope.launch {
+                repository.recordPlayback(song.id)
             }
+
+            startService()
         } catch (e: Exception) {
             e.printStackTrace()
             // If local playback failed (e.g. mock file URI issue), update state gracefully
@@ -154,6 +152,7 @@ class PlaybackManager private constructor(
                 currentSong = song,
                 isPlaying = false,
                 isPrepared = false,
+                durationMs = song.durationMs,
                 queue = queue,
                 queueIndex = startIndex
             )
@@ -217,12 +216,11 @@ class PlaybackManager private constructor(
             return
         }
         val player = mediaPlayer ?: return
-        if (requestAudioFocus()) {
-            player.start()
-            _state.value = _state.value.copy(isPlaying = true)
-            startProgressTracker()
-            startService()
-        }
+        requestAudioFocus()
+        player.start()
+        _state.value = _state.value.copy(isPlaying = true)
+        startProgressTracker()
+        startService()
     }
 
     fun playNext() {

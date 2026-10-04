@@ -1,5 +1,5 @@
 {
-  "name": "Music Pro",
+  "name": "Music",
   "description": "A premium modern offline music player with automatic scanning, albums, artists, playlists, equalizer, queue management, and background playback.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

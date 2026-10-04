@@ -147,12 +147,50 @@ class MusicRepository(
         }
     }
 
+    suspend fun seedSampleSongs(): Int = withContext(Dispatchers.IO) {
+        try {
+            val files = com.example.data.util.SampleAudioGenerator.ensureSampleFilesExist(context)
+            val entities = com.example.data.util.SampleAudioGenerator.SAMPLE_TRACKS.mapIndexed { index, spec ->
+                val file = files[index]
+                val mediaStoreId = -1000L - index
+                val uri = Uri.fromFile(file)
+                SongEntity(
+                    id = 0,
+                    mediaStoreId = mediaStoreId,
+                    title = spec.title,
+                    artist = spec.artist,
+                    album = spec.album,
+                    albumId = -1L - index,
+                    durationMs = spec.durationSeconds * 1000L,
+                    contentUriString = uri.toString(),
+                    albumArtUriString = null,
+                    genre = spec.genre,
+                    year = spec.year,
+                    trackNumber = index + 1,
+                    isFavorite = (index == 0),
+                    playCount = if (index == 0) 3 else 0,
+                    lastPlayedTimestamp = if (index == 0) System.currentTimeMillis() else 0L,
+                    dateAdded = System.currentTimeMillis() - (index * 86400000L),
+                    isSample = true,
+                    folderName = "Demo Music",
+                    folderPath = file.parentFile?.absolutePath ?: "/storage/emulated/0/Music",
+                    lyrics = spec.lyrics,
+                    fileSize = file.length(),
+                    bitrate = 320,
+                    sampleRate = 44100
+                )
+            }
+            entities.forEach { songDao.insertOrUpdateSong(it) }
+            entities.size
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0
+        }
+    }
+
     suspend fun scanMediaStore(minDurationMs: Long = 3000L): Int = withContext(Dispatchers.IO) {
         val songsList = mutableListOf<SongEntity>()
         val mediaStoreIds = mutableListOf<Long>()
-
-        // Ensure legacy mock/sample songs are pruned so only authentic device media is preserved
-        songDao.clearSampleSongs()
 
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
@@ -267,6 +305,9 @@ class MusicRepository(
                 songDao.removeDeletedSongs(mediaStoreIds)
             } else {
                 songDao.removeDeletedSongs(emptyList())
+                if (songDao.getSongCount() == 0) {
+                    seedSampleSongs()
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
